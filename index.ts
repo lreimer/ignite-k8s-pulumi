@@ -1,5 +1,6 @@
 import * as k8s from "@pulumi/kubernetes";
 import * as kx from "@pulumi/kubernetesx";
+import * as fs from "fs";
 
 const labels = { app: "ignite" };
 
@@ -53,10 +54,121 @@ const clusterRoleBinding = new k8s.rbac.v1.ClusterRoleBinding("ignite", {
         name: serviceAccount.metadata.name,
         namespace: namespace.metadata.name
     }]
-})
+});
+
+const configMap = new k8s.core.v1.ConfigMap("ignite-config", {
+    metadata: {
+        namespace: namespace.metadata.name
+    },
+    data: {
+        "node-configuration.xml": fs.readFileSync("node-configuration.xml").toString()
+    }
+});
 
 const statefulSet = new k8s.apps.v1.StatefulSet("ignite-custer", {
-    
+    metadata: {
+        namespace: namespace.metadata.name
+    },
+    spec: {
+        replicas: 3,
+        serviceName: "ignite",
+        selector: {matchLabels: labels},
+        template: {
+            metadata: {
+                labels: labels
+            },
+            spec: {
+                serviceAccountName: serviceAccount.metadata.name,
+                terminationGracePeriodSeconds: 60000,
+                containers: [{
+                    name: "ignite-node",
+                    image: "apacheignite/ignite:2.9.0",
+                    env: [
+                        {
+                            name: "OPTION_LIBS",
+                            value: "ignite-kubernetes,ignite-rest-http"
+                        },
+                        {
+                            name: "CONFIG_URI",
+                            value: "file:///ignite/config/node-configuration.xml"
+                        },
+                        {
+                            name: "JVM_OPTS",
+                            value: "-DIGNITE_WAL_MMAP=false"
+                        }
+                    ],
+                    ports: [
+                        { containerPort: 47100 }, // communication SPI port
+                        { containerPort: 47500 }, // discovery SPI port
+                        { containerPort: 49112 }, // JMX port
+                        { containerPort: 10800 }, // thin clients/JDBC driver port
+                        { containerPort: 8080 }   // REST API
+                    ],
+                    volumeMounts: [
+                        {
+                            name: "config-vol",
+                            mountPath: "/ignite/config"
+                        },
+                        {
+                            name: "work-vol",
+                            mountPath: "/ignite/work"
+                        },
+                        {
+                            name: "wal-vol",
+                            mountPath: "/ignite/wal"
+                        },
+                        {
+                            name: "walarchive-vol",
+                            mountPath: "/ignite/walarchive"
+                        }
+                    ]
+                }],
+                securityContext: {
+                    // try removing this if you have permission issues
+                    fsGroup: 2000
+                },
+                volumes: [{
+                    name: "config-vol",
+                    configMap: { name: configMap.metadata.name }
+                }]
+            }
+        },
+        volumeClaimTemplates: [
+            {
+                metadata: { name: "work-vol" },
+                spec: {
+                    accessModes: [ "ReadWriteOnce" ],
+                    resources: {
+                        requests: {
+                            storage: "1Gi"
+                        }
+                    }
+                }
+            },
+            {
+                metadata: { name: "wal-vol" },
+                spec: {
+                    accessModes: [ "ReadWriteOnce" ],
+                    resources: {
+                        requests: {
+                            storage: "1Gi"
+                        }
+                    }
+                }
+            },
+            {
+                metadata: { name: "walarchive-vol" },
+                spec: {
+                    accessModes: [ "ReadWriteOnce" ],
+                    resources: {
+                        requests: {
+                            storage: "1Gi"
+                        }
+                    }
+                }
+            }
+        ]
+    }
 });
 
 export const clusterName = statefulSet.metadata.name;
