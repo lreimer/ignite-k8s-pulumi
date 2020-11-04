@@ -95,18 +95,9 @@ const statefulSet = new k8s.apps.v1.StatefulSet("ignite-custer", {
                     name: "ignite-node",
                     image: "apacheignite/ignite:2.9.0",
                     env: [
-                        {
-                            name: "OPTION_LIBS",
-                            value: "ignite-kubernetes,ignite-rest-http"
-                        },
-                        {
-                            name: "CONFIG_URI",
-                            value: "file:///ignite/config/node-configuration.xml"
-                        },
-                        {
-                            name: "JVM_OPTS",
-                            value: "-DIGNITE_WAL_MMAP=false"
-                        }
+                        { name: "OPTION_LIBS", value: "ignite-kubernetes,ignite-rest-http" },
+                        { name: "CONFIG_URI", value: "file:///ignite/config/node-configuration.xml" },
+                        { name: "JVM_OPTS", value: "-DIGNITE_WAL_MMAP=false" }
                     ],
                     ports: [
                         { containerPort: 47100 }, // communication SPI port
@@ -116,22 +107,10 @@ const statefulSet = new k8s.apps.v1.StatefulSet("ignite-custer", {
                         { containerPort: 8080 }   // REST API
                     ],
                     volumeMounts: [
-                        {
-                            name: "config-vol",
-                            mountPath: "/ignite/config"
-                        },
-                        {
-                            name: "work-vol",
-                            mountPath: "/ignite/work"
-                        },
-                        {
-                            name: "wal-vol",
-                            mountPath: "/ignite/wal"
-                        },
-                        {
-                            name: "walarchive-vol",
-                            mountPath: "/ignite/walarchive"
-                        }
+                        { name: "config-vol", mountPath: "/ignite/config" },
+                        { name: "work-vol", mountPath: "/ignite/work" },
+                        { name: "wal-vol", mountPath: "/ignite/wal" },
+                        { name: "walarchive-vol", mountPath: "/ignite/walarchive" }
                     ]
                 }],
                 securityContext: {
