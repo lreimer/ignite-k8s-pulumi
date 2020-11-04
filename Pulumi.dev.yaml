@@ -1,0 +1,3 @@
+config:
+  ignite-k8s-pulumi:replicas: "3"
+  ignite-k8s-pulumi:serviceType: NodePort

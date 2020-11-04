@@ -1,6 +1,11 @@
 import * as k8s from "@pulumi/kubernetes";
 import * as kx from "@pulumi/kubernetesx";
+import * as pulumi from "@pulumi/pulumi";
 import * as fs from "fs";
+
+let config = new pulumi.Config();
+const replicas = config.getNumber("replicas") || 3;
+const serviceType = config.get("serviceType") || "NodePort"; // or use LoadBalancer
 
 const labels = { app: "ignite" };
 
@@ -18,7 +23,7 @@ const service = new k8s.core.v1.Service("ignite-service", {
     },
     spec: 
     {
-        type: "NodePort", // or use LoadBalancer
+        type: serviceType,
         ports: [
             {name: "rest", port: 8080, targetPort: 8080},
             {name: "thin", port: 10800, targetPort: 10800}
@@ -76,7 +81,7 @@ const statefulSet = new k8s.apps.v1.StatefulSet("ignite-custer", {
         namespace: namespace.metadata.name
     },
     spec: {
-        replicas: 3,
+        replicas: replicas,
         serviceName: "ignite",
         selector: {matchLabels: labels},
         template: {
