@@ -4,15 +4,21 @@ import * as fs from "fs";
 
 const labels = { app: "ignite" };
 
-const namespace = new k8s.core.v1.Namespace("ignite")
+const namespace = new k8s.core.v1.Namespace("ignite", {
+    metadata: {
+        name: "ignite"
+    }
+});
 
 const service = new k8s.core.v1.Service("ignite-service", {
     metadata: {
+        name: "ignite-service",
         namespace: namespace.metadata.name,
         labels: labels
     },
-    spec: {
-        type: "LoadBalancer",
+    spec: 
+    {
+        type: "NodePort", // or use LoadBalancer
         ports: [
             {name: "rest", port: 8080, targetPort: 8080},
             {name: "thin", port: 10800, targetPort: 10800}
