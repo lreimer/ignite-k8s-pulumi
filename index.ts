@@ -1,5 +1,4 @@
 import * as k8s from "@pulumi/kubernetes";
-import * as kx from "@pulumi/kubernetesx";
 import * as pulumi from "@pulumi/pulumi";
 import * as fs from "fs";
 
@@ -72,7 +71,7 @@ const configMap = new k8s.core.v1.ConfigMap("ignite-config", {
         namespace: namespace.metadata.name
     },
     data: {
-        "node-configuration.xml": fs.readFileSync("node-configuration.xml").toString()
+        "ignite-configuration.xml": fs.readFileSync("ignite-configuration.xml").toString()
     }
 });
 
@@ -96,7 +95,7 @@ const statefulSet = new k8s.apps.v1.StatefulSet("ignite-custer", {
                     image: "apacheignite/ignite:2.9.0",
                     env: [
                         { name: "OPTION_LIBS", value: "ignite-kubernetes,ignite-rest-http" },
-                        { name: "CONFIG_URI", value: "file:///ignite/config/node-configuration.xml" },
+                        { name: "CONFIG_URI", value: "file:///ignite/config/ignite-configuration.xml" },
                         { name: "JVM_OPTS", value: "-DIGNITE_WAL_MMAP=false" }
                     ],
                     ports: [
